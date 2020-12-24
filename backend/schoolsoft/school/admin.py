@@ -118,6 +118,7 @@ class EleveAdmin(admin.ModelAdmin):
 class InscriptionAdmin(admin.ModelAdmin):
     list_per_page = 15
     list_display = ['eleve', 'classe' , 'date_inscription', 'annee_scolaire']
+    list_filter = ('classe', 'annee_scolaire')
 
 ####Site Header+Title####
 admin.site.site_header = 'L.P.KA.BA.T'
