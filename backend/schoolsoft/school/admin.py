@@ -46,7 +46,6 @@ class ProfesseurAdmin(admin.ModelAdmin):
     
     fields = (('photo_image', 'photo'), ('first_name', 'last_name',), ('gender', 'status'), ('dob', 'phone'),'is_stranger') #to order and organize fields
 
-
 @admin.register(Classe)
 class ClasseAdmin(admin.ModelAdmin):
     list_per_page = 15
