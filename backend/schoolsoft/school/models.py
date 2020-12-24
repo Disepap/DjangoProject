@@ -77,10 +77,11 @@ class Classe(models.Model):
 class Annee(models.Model):
     fromYear = models.IntegerField(verbose_name = 'De')
     toYear = models.IntegerField(verbose_name = 'A')
-    is_actif = models.BooleanField(verbose_name ='Année en cours', unique=True)
+    is_actif = models.BooleanField(verbose_name ='Année en cours')
 
     class Meta:
         verbose_name_plural = "Année Scolaire"
+        unique_together = [['fromYear','toYear']]
         
     def __str__(self):
         return str(self.fromYear) + '-' + str(self.toYear)

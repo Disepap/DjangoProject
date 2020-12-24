@@ -79,21 +79,48 @@ class ClasseAdmin(admin.ModelAdmin):
 @admin.register(Annee)
 class AnneeAdmin(admin.ModelAdmin):
     list_display = ['fromYear','toYear', 'is_actif']
+    list_filter = ('fromYear', 'toYear', 'is_actif')
+    def save_model(self, request, obj, form, change):
+        if obj.is_actif is True:
+            Annee.objects.update(is_actif=False)
+        super().save_model(request, obj, form, change)
 
 @admin.register(Moyenne)
 class MoyenneAdmin(admin.ModelAdmin):
     list_per_page = 15
     list_display = ['eleve','matiere', 'term', 'coef', 'note1', 'note2', 'note3', 'note_compo']
     list_filter = ('eleve', 'matiere', 'term')
-    fields = (('eleve','matiere'), 'term', 'coef', ('note1', 'note2', 'note3', 'note_compo'))
-    raw_id_fields = ["eleve"]
+    fields = ('eleve','matiere', ('term', 'coef'), ('note1', 'note2', 'note3', 'note_compo'))
+    #raw_id_fields = ["eleve"]
 
 @admin.register(Matiere)
-class CoursAdmin(admin.ModelAdmin):
+class MatiereAdmin(admin.ModelAdmin):
     list_per_page = 15
-    list_display = ['cname', 'cdesc']
-    list_filter = ('cname', 'cdesc')
+    list_display = ['cname', 'cdesc', 'view_professeurs_link', 'view_classes_link']
+    list_filter = ('cname',)
     search_fields = ('cname', 'cdesc')
+
+    def view_professeurs_link(self, obj):
+        count = obj.professeurs.count()
+        url = (
+            reverse("admin:school_professeur_changelist")
+            + "?"
+            + urlencode({"matiere__id": f"{obj.id}"})
+        )
+        return format_html('<a href="{}">{} Professeur(s)</a>', url, count)
+
+    view_professeurs_link.short_description = "Dispensé par"
+
+    def view_classes_link(self, obj):
+        count = obj.classes.count()
+        url = (
+            reverse("admin:school_classe_changelist")
+            + "?"
+            + urlencode({"matiere__id": f"{obj.id}"})
+        )
+        return format_html('<a href="{}">{} Classe(s)</a>', url, count)
+
+    view_classes_link.short_description = "Dispensé dans"
 
 @admin.register(Eleve)
 class EleveAdmin(admin.ModelAdmin):
@@ -118,7 +145,13 @@ class EleveAdmin(admin.ModelAdmin):
 class InscriptionAdmin(admin.ModelAdmin):
     list_per_page = 15
     list_display = ['eleve', 'classe' , 'date_inscription', 'annee_scolaire']
-    list_filter = ('classe', 'annee_scolaire')
+    list_filter = ('status',)
+    search_fields = ('classe', 'annee_scolaire', 'eleve')
+    fields = (('eleve', 'classe') ,'date_inscription', ('annee_scolaire', 'status'))
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "annee_scolaire":
+            kwargs["queryset"] = Annee.objects.filter(is_actif__in=[True])
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 ####Site Header+Title####
 admin.site.site_header = 'L.P.KA.BA.T'
