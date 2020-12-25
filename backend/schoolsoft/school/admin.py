@@ -5,6 +5,9 @@ from import_export.admin import ImportExportModelAdmin
 from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils.html import format_html
+import django.utils.timezone as timezone
+#from django.contrib import messages
+
 
 
 ####Import Export section####
@@ -37,14 +40,14 @@ class SectionAdmin(admin.ModelAdmin):
 @admin.register(Professeur)
 class ProfesseurAdmin(admin.ModelAdmin):
     list_per_page = 15
-    list_display = ['first_name', 'last_name' , 'gender', 'status', 'created', 'is_stranger']
+    list_display = ['first_name', 'last_name' , 'gender', 'status', 'date_debut', 'date_depart', 'created', 'is_stranger']
     list_filter = ('gender', 'status', 'is_stranger')
     search_fields = ('first_name', 'last_name')
     readonly_fields = ['photo_image']
     def photo_image(self, obj):
         return format_html('<img src="{url}" width="{width}" height={height} />'.format(url = obj.photo.url, width = 120, height =120,))
     
-    fields = (('photo_image', 'photo'), ('first_name', 'last_name',), ('gender', 'status'), ('dob', 'phone'),'is_stranger') #to order and organize fields
+    fields = (('photo_image', 'photo'), ('first_name', 'last_name',), ('gender', 'status'), ('dob', 'phone'), ('date_debut', 'date_depart'),'is_stranger') #to order and organize fields
 
 @admin.register(Classe)
 class ClasseAdmin(admin.ModelAdmin):
@@ -54,7 +57,11 @@ class ClasseAdmin(admin.ModelAdmin):
     search_fields = ('cnum', 'sections', 'professeurs')
 
     def view_eleves_link(self, obj):
-        count = obj.eleves.count()
+        anne_cur = Annee.objects.get(is_actif = True)
+        inscrip = Inscription.objects.filter(classe__id = obj.id, annee_scolaire__id = anne_cur.id)
+        #count = obj.eleves.count()
+        count = Inscription.objects.filter(classe__id = obj.id, annee_scolaire__id = anne_cur.id).count()
+        
         url = (
             reverse("admin:school_eleve_changelist")
             + "?"
@@ -82,7 +89,12 @@ class AnneeAdmin(admin.ModelAdmin):
     list_filter = ('fromYear', 'toYear', 'is_actif')
     def save_model(self, request, obj, form, change):
         if obj.is_actif is True:
-            Annee.objects.update(is_actif=False)
+            if (obj.fromYear >= timezone.now().year and obj.toYear <= timezone.now().year + 1):
+                #Annee.objects.update(is_actif=True)
+                obj.is_actif = True
+            else:
+                obj.is_actif = False
+                #messages.error(request,'Error message')
         super().save_model(request, obj, form, change)
 
 @admin.register(Moyenne)
@@ -90,7 +102,7 @@ class MoyenneAdmin(admin.ModelAdmin):
     list_per_page = 15
     list_display = ['eleve','matiere', 'term', 'coef', 'note1', 'note2', 'note3', 'note_compo']
     list_filter = ('eleve', 'matiere', 'term')
-    fields = ('eleve','matiere', ('term', 'coef'), ('note1', 'note2', 'note3', 'note_compo'))
+    fields = (('eleve', 'professeur'), 'matiere', ('term', 'coef'), ('note1', 'note2', 'note3', 'note_compo'))
     #raw_id_fields = ["eleve"]
 
 @admin.register(Matiere)
@@ -144,8 +156,8 @@ class EleveAdmin(admin.ModelAdmin):
 @admin.register(Inscription)
 class InscriptionAdmin(admin.ModelAdmin):
     list_per_page = 15
-    list_display = ['eleve', 'classe' , 'date_inscription', 'annee_scolaire']
-    list_filter = ('status',)
+    list_display = ['eleve', 'classe' , 'date_inscription', 'annee_scolaire', 'status']
+    list_filter = ('classe', 'annee_scolaire', 'status')
     search_fields = ('classe', 'annee_scolaire', 'eleve')
     fields = (('eleve', 'classe') ,'date_inscription', ('annee_scolaire', 'status'))
     def formfield_for_foreignkey(self, db_field, request, **kwargs):

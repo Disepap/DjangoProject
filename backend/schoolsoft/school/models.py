@@ -10,6 +10,14 @@ class Ecole(models.Model):
         
         verbose_name_plural = 'École LT'
 
+#Salle
+class Salle(models.Model):
+    sname = models.CharField(max_length = 70, verbose_name ='Salle')
+    cap_ac = models.PositiveSmallIntegerField()
+    cap_acmax = models.PositiveSmallIntegerField()
+
+    def __str__(self):
+        return self.sname
 
 #Person base class
 class Personne(models.Model):
@@ -33,7 +41,7 @@ class Personne(models.Model):
 
     def __str__(self):
 
-        return self.first_name + ' ' + self.last_name
+        return '{} {}'.format(self.first_name, self.last_name)
 
 
 #Related section of the class
@@ -53,8 +61,9 @@ class Professeur(Personne):
     )
     status = models.CharField(max_length=30, choices=STATUS, default='p', verbose_name ='Statut enseignant')
     is_stranger = models.BooleanField(default=False, verbose_name ='Etranger')
-    #Date de debut de service
-    #date de fin deservice
+    date_debut = models.DateField(verbose_name ='Date d\'arrivée', null=True, blank=True)
+    date_depart = models.DateField(verbose_name ='Date de départ', null=True, blank=True)
+   
 
 #Student class
 class Eleve(Personne):
@@ -70,6 +79,9 @@ class Classe(models.Model):
     professeurs = models.ManyToManyField(Professeur, blank=True )
     eleves = models.ManyToManyField(Eleve, through='Inscription')
 
+    class Meta:
+        unique_together = [['cnum', 'sections']]
+
     def __str__(self):
         return self.cnum
 
@@ -77,11 +89,12 @@ class Classe(models.Model):
 class Annee(models.Model):
     fromYear = models.IntegerField(verbose_name = 'De')
     toYear = models.IntegerField(verbose_name = 'A')
-    is_actif = models.BooleanField(verbose_name ='Année en cours')
+    is_actif = models.BooleanField(default = False, verbose_name ='Année en cours')
 
     class Meta:
         verbose_name_plural = "Année Scolaire"
         unique_together = [['fromYear','toYear']]
+        
         
     def __str__(self):
         return str(self.fromYear) + '-' + str(self.toYear)
@@ -107,11 +120,17 @@ class Moyenne(models.Model):
         ('2', '2 eme trim'),
         ('3', '3 eme trim'),
     )
+    COEF_EDT = (
+        ('1', '1'),
+        ('2', '2'),
+        ('3', '3'),
+        ('4', '4'),
+    )
     professeur = models.ForeignKey(Professeur, on_delete=models.CASCADE, related_name='moyenne_professeurs')
     eleve = models.ForeignKey(Eleve, on_delete=models.CASCADE, related_name='moyenne_eleves')
     matiere = models.ForeignKey(Matiere, on_delete=models.CASCADE, related_name='moyenne_matieres')
     term = models.CharField(max_length=20, choices=TERM_STATUS, default='1')
-    coef  = models.DecimalField(max_digits = 5, decimal_places = 2, null=True, blank=True)
+    coef  = models.CharField(max_length=1, choices=COEF_EDT, default='1')
     note1 = models.DecimalField(max_digits = 5, decimal_places = 2, null=True, blank=True)
     note2 = models.DecimalField(max_digits = 5, decimal_places = 2, null=True, blank =True)
     note3 = models.DecimalField(max_digits = 5, decimal_places = 2, null=True, blank=True)
@@ -136,7 +155,7 @@ class Inscription(models.Model):
     annee_scolaire = models.ForeignKey(Annee, on_delete = models.CASCADE)
 
     class Meta:
-        unique_together =[['classe','eleve']]
+        unique_together =[['eleve', 'annee_scolaire']]
 
     def __str__(self):
         return Eleve.objects.get(pk = self.eleve.id).first_name
