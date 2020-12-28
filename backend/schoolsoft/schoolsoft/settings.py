@@ -20,19 +20,19 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'material.admin',
-    'material.admin.default',
+    
     #'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'material.admin',
+    'material.admin.default',
     'school.apps.SchoolConfig',
     'rest_framework',
     'import_export',
     
-    #'material.admin.default',
 ]
 
 MIDDLEWARE = [
@@ -150,6 +150,7 @@ MATERIAL_ADMIN_SITE = {
         'professeur':'people',
         'section':'widgets',
         'inscription':'person_add',
+        'salle':'location_city',
         
     }
 }

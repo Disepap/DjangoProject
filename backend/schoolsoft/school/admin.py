@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Section, Classe, Matiere, Professeur, Eleve, Annee, Moyenne, Inscription
+from django.contrib.auth.models import User, Group
+from .models import Section, Classe, Matiere, Professeur, Eleve, Annee, Moyenne, Inscription, Salle
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from django.urls import reverse
@@ -8,7 +9,8 @@ from django.utils.html import format_html
 import django.utils.timezone as timezone
 #from django.contrib import messages
 
-
+admin.site.unregister(User)
+admin.site.unregister(Group)
 
 ####Import Export section####
 class EleveResource(resources.ModelResource):
@@ -25,6 +27,7 @@ class SectionAdmin(admin.ModelAdmin):
     list_display = ['sname','sdesc', 'view_classes_link']
     list_filter = ('sname', 'sdesc')
     search_fields = ('sname', 'sdesc')
+    fields = (('sname', 'sdesc'), )
 
     def view_classes_link(self, obj):
         count = obj.classes_sections.count()
@@ -40,7 +43,7 @@ class SectionAdmin(admin.ModelAdmin):
 @admin.register(Professeur)
 class ProfesseurAdmin(admin.ModelAdmin):
     list_per_page = 15
-    list_display = ['first_name', 'last_name' , 'gender', 'status', 'date_debut', 'date_depart', 'created', 'is_stranger']
+    list_display = ['first_name', 'last_name' , 'gender', 'status', 'created', 'date_debut', 'date_depart', 'is_stranger']
     list_filter = ('gender', 'status', 'is_stranger')
     search_fields = ('first_name', 'last_name')
     readonly_fields = ['photo_image']
@@ -55,6 +58,7 @@ class ClasseAdmin(admin.ModelAdmin):
     list_display = ['cnum','cname', 'sections', 'view_eleves_link', 'view_professeurs_link']
     list_filter = ('cnum', 'sections')
     search_fields = ('cnum', 'sections', 'professeurs')
+    fields = (('cnum', 'cname'), 'sections', 'professeurs')
 
     def view_eleves_link(self, obj):
         anne_cur = Annee.objects.get(is_actif = True)
@@ -87,6 +91,7 @@ class ClasseAdmin(admin.ModelAdmin):
 class AnneeAdmin(admin.ModelAdmin):
     list_display = ['fromYear','toYear', 'is_actif']
     list_filter = ('fromYear', 'toYear', 'is_actif')
+    fields = (('fromYear', 'toYear'), 'is_actif')
     def save_model(self, request, obj, form, change):
         if obj.is_actif is True:
             if (obj.fromYear >= timezone.now().year and obj.toYear <= timezone.now().year + 1):
@@ -100,10 +105,35 @@ class AnneeAdmin(admin.ModelAdmin):
 @admin.register(Moyenne)
 class MoyenneAdmin(admin.ModelAdmin):
     list_per_page = 15
-    list_display = ['eleve','matiere', 'term', 'coef', 'note1', 'note2', 'note3', 'note_compo']
+    list_display = ['eleve','matiere', 'get_classe', 'get_AnneSc', 'term', 'coef', 'note1', 'note2', 'note3', 'get_Note_classe', 'note_compo']
     list_filter = ('eleve', 'matiere', 'term')
-    fields = (('eleve', 'professeur'), 'matiere', ('term', 'coef'), ('note1', 'note2', 'note3', 'note_compo'))
+    fields = (('eleve', 'matiere'), ('term', 'coef'), ('note1', 'note2', 'note3', 'note_compo'))
     #raw_id_fields = ["eleve"]
+    def get_classe(self, obj):
+        insc = Inscription.objects.filter(eleve__id = obj.eleve.id)
+        if(len(insc) > 0):
+            return insc[0].classe
+        else:
+            return ''
+    get_classe.short_description = "Classe"
+
+    def get_AnneSc(self, obj):
+        insc = Inscription.objects.filter(eleve__id = obj.eleve.id)
+        if(len(insc) > 0):
+            return insc[0].annee_scolaire
+        else:
+            return ''
+    get_AnneSc.short_description = "Année scolaire"
+
+    def get_Note_classe(self, obj):
+        if (obj.note1 != None and obj.note2 != None and obj.note3 != None):
+            return round((obj.note1 + obj.note2 + obj.note3)/3, 2)
+        elif (obj.note1 != None and obj.note2 != None):
+            return round((obj.note1 + obj.note2)/2, 2)
+        else:
+            return obj.note1
+
+    get_Note_classe.short_description = "Note de classe"
 
 @admin.register(Matiere)
 class MatiereAdmin(admin.ModelAdmin):
@@ -111,6 +141,7 @@ class MatiereAdmin(admin.ModelAdmin):
     list_display = ['cname', 'cdesc', 'view_professeurs_link', 'view_classes_link']
     list_filter = ('cname',)
     search_fields = ('cname', 'cdesc')
+    fields = (('cname', 'cdesc'), 'classes', 'professeurs')
 
     def view_professeurs_link(self, obj):
         count = obj.professeurs.count()
@@ -164,6 +195,12 @@ class InscriptionAdmin(admin.ModelAdmin):
         if db_field.name == "annee_scolaire":
             kwargs["queryset"] = Annee.objects.filter(is_actif__in=[True])
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+@admin.register(Salle)
+class SalleAdmin(admin.ModelAdmin):
+    list_per_page = 15
+    list_display = ['sname', 'classe' , 'cap_ac', 'cap_acmax']
+    fields = ('sname', 'classe' , ('cap_ac', 'cap_acmax'))
 
 ####Site Header+Title####
 admin.site.site_header = 'L.P.KA.BA.T'

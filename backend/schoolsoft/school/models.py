@@ -10,15 +10,6 @@ class Ecole(models.Model):
         
         verbose_name_plural = 'École LT'
 
-#Salle
-class Salle(models.Model):
-    sname = models.CharField(max_length = 70, verbose_name ='Salle')
-    cap_ac = models.PositiveSmallIntegerField()
-    cap_acmax = models.PositiveSmallIntegerField()
-
-    def __str__(self):
-        return self.sname
-
 #Person base class
 class Personne(models.Model):
     GENDER = (
@@ -85,6 +76,16 @@ class Classe(models.Model):
     def __str__(self):
         return self.cnum
 
+#Salle
+class Salle(models.Model):
+    sname = models.CharField(max_length = 70, verbose_name ='Salle')
+    classe = models.ForeignKey(Classe, on_delete = models.CASCADE, null=True, blank =True, related_name='salle_classe')
+    cap_ac = models.PositiveSmallIntegerField(verbose_name ='Capacité d\'acceuil')
+    cap_acmax = models.PositiveSmallIntegerField(verbose_name ='Capacité d\'acceuil maximale')
+
+    def __str__(self):
+        return self.sname
+
 #Year
 class Annee(models.Model):
     fromYear = models.IntegerField(verbose_name = 'De')
@@ -101,7 +102,7 @@ class Annee(models.Model):
 
 #Course model
 class Matiere(models.Model):
-    cname = models.CharField(max_length = 70, verbose_name ='Matière')
+    cname = models.CharField(max_length = 70, unique=True, verbose_name ='Matière')
     cdesc = models.CharField(max_length = 100, verbose_name ='Description', blank=True)
     classes = models.ManyToManyField(Classe, blank = True)
     professeurs = models.ManyToManyField(Professeur, blank=True)
@@ -126,19 +127,19 @@ class Moyenne(models.Model):
         ('3', '3'),
         ('4', '4'),
     )
-    professeur = models.ForeignKey(Professeur, on_delete=models.CASCADE, related_name='moyenne_professeurs')
+    #professeur = models.ForeignKey(Professeur, on_delete=models.CASCADE, related_name='moyenne_professeurs')
     eleve = models.ForeignKey(Eleve, on_delete=models.CASCADE, related_name='moyenne_eleves')
     matiere = models.ForeignKey(Matiere, on_delete=models.CASCADE, related_name='moyenne_matieres')
     term = models.CharField(max_length=20, choices=TERM_STATUS, default='1')
     coef  = models.CharField(max_length=1, choices=COEF_EDT, default='1')
-    note1 = models.DecimalField(max_digits = 5, decimal_places = 2, null=True, blank=True)
-    note2 = models.DecimalField(max_digits = 5, decimal_places = 2, null=True, blank =True)
-    note3 = models.DecimalField(max_digits = 5, decimal_places = 2, null=True, blank=True)
-    note_compo = models.DecimalField(max_digits = 5, decimal_places = 2, null=True, blank=True)
+    note1 = models.DecimalField(max_digits = 4, decimal_places = 2, null=True, blank=True)
+    note2 = models.DecimalField(max_digits = 4, decimal_places = 2, null=True, blank =True)
+    note3 = models.DecimalField(max_digits = 4, decimal_places = 2, null=True, blank=True)
+    note_compo = models.DecimalField(max_digits = 4, decimal_places = 2, null=True, blank=True)
     #total
 
-    #def __str__(self):
-        #return self.etudiant
+    class Meta:
+        unique_together =[['eleve', 'matiere']]
 
 #Inscription
 class Inscription(models.Model):
