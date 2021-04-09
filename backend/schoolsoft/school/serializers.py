@@ -32,3 +32,4 @@ class MoyenneSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Moyenne
         fields = ('eleves', 'matieres', 'term', 'coef', 'note1', 'note2', 'note3', 'note_compo')
+        

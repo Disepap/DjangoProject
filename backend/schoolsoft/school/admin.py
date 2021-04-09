@@ -176,7 +176,7 @@ class EleveAdmin(admin.ModelAdmin):
     list_display = ['first_name', 'last_name' , 'num_mat', 'gender', 'created', 'get_classe', 'is_actif']
     list_filter = ('gender', 'is_actif')
     search_fields = ('first_name', 'last_name', 'num_mat')
-    fields = (('photo_image', 'photo'), ('first_name', 'last_name',),'num_mat','gender', ('dob', 'phone'),'is_actif') #to order and organize fields
+    fields = (('photo_image', 'photo'), ('first_name', 'last_name',),'num_mat','gender', ('dob', 'phone'),'is_actif')
     def get_classe(self, obj):
         if(obj.classe_set.count() > 0):
             return obj.classe_set.all()[0].cnum
